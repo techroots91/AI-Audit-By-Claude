@@ -1,80 +1,131 @@
 # SEO Audit Report
 
-**Site**: actorfacts.com (WordPress)
+**Site**: https://actorfacts.com/ (WordPress 7.1.4, All in One SEO 5.0.3, LiteSpeed Cache, Hostinger)
 **Date**: 2026-10-29
-**Pages analyzed**: 35 indexed URLs, seen through search results (no direct crawl)
-**Overall score**: **~45/100 (provisional)**. That band means "critical SEO issues". The score covers only what could be observed. About half the checklist could not be verified (see [Not verified](#not-verified)).
+**Pages analyzed**: 986. That is every URL in the XML sitemap: 766 gallery and other posts, 28 biographies, 171 tag pages, 15 categories and 6 pages. All were crawled live.
+**Overall score**: **60/100**. That band means "needs significant work". The technical foundation is solid, but meta data, thin pages and internal linking hold the score down.
 
-## How this audit was done
+> This version replaces the search-index-only draft from earlier today (still in git history). The live crawl corrected several draft findings:
+> - `?amp=1` pages already canonicalize to the normal URL.
+> - `/category/uncategorized/` already 301s to `/uncategorized/`.
+> - Biography ages now read correctly (Rashmika Mandanna: 30).
+> - Biography titles have already been shortened.
+> - `Person` schema is already in place.
 
-- **No direct crawl.** The audit environment's network policy blocks `actorfacts.com`, so I couldn't read raw HTML, response headers, `robots.txt`, the sitemap or page speed.
-- **No Semrush data.** The connected Semrush account has no API units left, so its Site Audit, Domain Overview and Organic reports returned nothing.
-- **What the findings rest on:** 10 `site:` and topic searches, using the titles, URLs, snippets and structured data that search engines have stored for the site. That shows how search engines currently see the site. It is a sample, not a full crawl.
+## Score breakdown
+
+| Area | Score | Notes |
+|---|---|---|
+| Crawlability & indexation | 10/15 | robots.txt, sitemap, llms.txt and 404s are fine. Paginated archives are `noindex, nofollow`, and 171 thin tag pages are indexed. |
+| Meta tags & head | 7/15 | 659 titles over 60 characters. 214 pages lack a meta description and 168 have one that's too long. Every post shares the logo as its `og:image`. |
+| Headings | 9/10 | Exactly one H1 on all 986 pages. |
+| Images | 5/10 | 99% have alt text, but 42% use generic "(n)" alts. 63% lack width/height, only 17% are WebP, and the main image is lazy-loaded. |
+| Performance | 7/10 | Good caching and TTFB. LCP is 1.8–4.2 s on throttled mobile. |
+| Structured data | 8/10 | BlogPosting, Person (with birthDate and sameAs), Breadcrumb and ProfilePage are all present. Small conflicts remain. |
+| Internal linking | 8/15 | 144 of 171 tag pages link to no biography. The homepage has 420 links, repeating the same 4–5 posts. |
+| Mobile & accessibility | 3/5 | 16px body text and no horizontal scroll. Many tap targets are under 24px tall. |
+| Content quality / E-E-A-T | 3/10 | 96% of posts are photo galleries. 289 posts have under 150 words. Nothing has been published since 7 July 2026. |
 
 ## Critical issues (must fix)
 
-- [ ] **Duplicate URLs indexed through AMP.** `?amp=1` versions of pages are indexed alongside the normal URLs, e.g. [`/kajal-aggarwal-biography-…-actorfacts/?amp=1`](https://actorfacts.com/kajal-aggarwal-biography-age-height-weight-family-career-filmography-controversies-more-actorfacts/?amp=1). Either the AMP page's canonical doesn't point to the normal URL, or the normal page lacks `rel="amphtml"`.
-  **Fix:** Google no longer favours AMP, so the simplest option is to turn off the AMP plugin (or its "Paired/Reader" mode) and 301 `?amp=1` to the clean URL. If you keep AMP, make sure each AMP page has `<link rel="canonical">` pointing to the normal URL.
-- [ ] **The same category is indexed under two URLs.** Both [`/uncategorized/`](https://actorfacts.com/uncategorized/) and [`/category/uncategorized/`](https://actorfacts.com/category/uncategorized/) are indexed. The category base was probably removed at some point (a Rank Math/Yoast "strip category base" setting) and the old URLs never got redirected.
-  **Fix:** choose one structure and 301 the other, then set Uncategorized to `noindex` (or move its posts into real categories and delete it).
-- [ ] **Thin archive pages compete with the biographies.** Pages such as [`/kajol/`](https://actorfacts.com/kajol/), [`/delna-davis/`](https://actorfacts.com/delna-davis/), [`/avneet-kaur/`](https://actorfacts.com/avneet-kaur/), [`/anveshi-jain/`](https://actorfacts.com/anveshi-jain/), [`/mamitha-baiju/`](https://actorfacts.com/mamitha-baiju/), [`/deepti-sati/`](https://actorfacts.com/deepti-sati/), [`/sonal-chauhan/`](https://actorfacts.com/sonal-chauhan/), [`/trupti-ravindra/`](https://actorfacts.com/trupti-ravindra/) and [`/kushitha-kallapu/`](https://actorfacts.com/kushitha-kallapu/) are lists of gallery posts (tag archives with the base removed, it appears) with no unique text. Where a biography also exists, the two pages compete for the person's name, and neither ranks. Earlier tests found ActorFacts in the top ~10 for 0 of 7 actor-name queries.
-  **Fix:** for each person, make **one** indexable page. Either (a) add 150–300 words of unique intro text to the tag archive and link to the biography, or (b) `noindex, follow` tag archives and link the galleries from the biography.
-- [ ] **Ages are fixed text and already wrong.** The Rashmika Mandanna biography shows "Age: 29 Years". Born 5 April 1996, she is 30. Every biography with a fixed age goes stale on the subject's birthday, which undermines trust (and E-E-A-T).
-  **Fix:** compute ages from `birthDate` with a shortcode or theme template, and show "as of {current date}".
+- [ ] **Paginated archives are `noindex, nofollow`.** E.g. `https://actorfacts.com/page/2/` and `https://actorfacts.com/photos/page/2/`. With 794 posts, the only internal path to older posts runs through these pages, and `nofollow` tells Google not to follow it. Older galleries and biographies then depend on the sitemap alone.
+  **Fix:** in AIOSEO → Search Appearance → Advanced, switch "No-index paginated pages" to `noindex, follow`, or remove it. Never use `nofollow` on archive pagination.
+- [ ] **171 tag pages are indexed with almost no unique content.** They are listed in `post_tag-sitemap.xml` and indexable. 114 have an "About {name}" block, but it is only about 20 words (median). 57 have none. None has a meta description or Open Graph tags, and **144 of 171 don't link to that person's biography**. Each one competes with the biography and gallery posts for the person's name.
+  **Fix (choose one per person):**
+  - (a) *Make the tag page the person's hub.* Write a 150–300-word intro, a Quick Facts table, a link to the biography, then the galleries. Add a meta description.
+  - (b) *Hide it.* Set tag archives to `noindex, follow` in AIOSEO → Search Appearance → Taxonomies → Tags, and remove tags from the sitemap.
+
+  Option (a) suits the roughly 28 people with biographies. Option (b) suits the rest.
+- [ ] **Thin gallery posts make up most of the site.** 766 of 794 posts are photo galleries. Their median content is about 200 words, and 289 posts have under 150 words. At this ratio Google's helpful-content systems may treat the whole site as low-value. Some titles, e.g. `/tanya-maniktala-candid-with-wet-hair-in-maroon-towel/`, also risk SafeSearch filtering for the domain.
+  **Fix:** add 150–250 words of real context to each new gallery (the event, the film, the photographer or source, and a link to the biography). Merge or `noindex` near-identical galleries. Shift the publishing mix towards biographies, film pages and reviews.
+- [ ] **No new posts since 7 July 2026.** `post-sitemap.xml` was last modified on 2026-07-07, and no post has a newer `dateModified`. Sixteen weeks of silence on a news and celebrity site hurts crawl frequency and rankings.
+  **Fix:** set a steady schedule, e.g. 3 biographies or film pages and 5 galleries a week, and update older biographies (filmography, awards).
 
 ## Warnings (should fix)
 
-- [ ] **Titles are far too long.** Biography titles run to about 93 characters before the brand suffix, e.g. "Kriti Sanon Biography, Age, Height, Weight, Family, Career, Filmography, Controversies & More". Google cuts titles at about 60 characters, so everything after "Career" is lost.
-  **Fix:** `{Name} Biography: Age, Height, Family & Movies` (≈45–58 characters), with the SEO plugin adding ` - ActorFacts`.
-- [ ] **Slugs are very long, and the brand appears twice.** E.g. `/kriti-sanon-biography-age-height-weight-family-career-filmography-controversies-more-actorfacts/` (95 characters). The same template is used on Priyanka Chopra, Kajal Aggarwal, Soundarya Sharma, Pragya Jaiswal, Rashmika Mandanna, Jacqueline Fernandez and Amala Paul.
-  **Fix:** for new posts, use `/{name}-biography/`. For existing ones, change the slug **only with a 301** from the old URL (Rank Math and Yoast Premium do this automatically, or use the Redirection plugin). Don't break URLs that already rank.
-- [ ] **Three different biography templates.** (A) "…Biography, Age, Height, Weight, Family, Career, Filmography, Controversies & More", (B) "…Biography: Age, Height, Weight, Body Measurements, Affairs, Family", (C) "Prabhas Biography: Pan-Indian Star & Baahubali Legend". Keyword-stuffed patterns (A) and (B) look like the low-trust competitor sites. Pattern (C), a real description, is the best.
-- [ ] **Brand suffix used inconsistently on titles.** Some indexed titles end in "- ActorFacts", but others don't ("Preity Mukhundhan Stuns in Maroon Dress", "Anushka Sen Shimmery Yellow Dress", all the Pattern A biographies). Set one title template in the SEO plugin for each post type.
-- [ ] **The Cast & Crew section has no cast or crew content.** [`/cast-crew/`](https://actorfacts.com/cast-crew/) lists photoshoots and biographies, but no film cast lists or crew pages. The homepage title promises "Movie Cast and Crew, Cinema News". Either build that content (film pages with `Movie` schema and cast lists) or remove it from the title and navigation.
-- [ ] **Content is mostly gallery posts.** Most recent posts are photoshoot galleries ("…Stuns in Black Saree and Golden Blouse Photos"). They have little text, attract little search demand outside image search, and put the site in a spam-heavy search space. Celebrity photos are also usually copyrighted, so check that you have the rights to use them.
-- [ ] **No Hollywood or Bollywood category pages are indexed**, though the navigation lists them. Only [`/photos/kollywood/`](https://actorfacts.com/photos/kollywood/) and [`/photos/sandalwood/`](https://actorfacts.com/photos/sandalwood/) appear. Check that those categories have posts and aren't set to `noindex` by mistake.
-- [ ] **Possibly stale publishing.** The newest posts in the indexed homepage are dated 7 July 2026. If nothing has gone up since, a regular schedule (even 2–3 good biographies a week) matters more than anything else on this list.
-- [ ] **Personal Gmail in the Organization schema.** `"email": "techroots91@gmail.com"` is exposed in the homepage JSON-LD. Use a domain address.
+- [ ] **Every post shares the site logo as `og:image`.** All 794 posts and 6 pages use `cropped-ActorFactor-Logo-2.png`, so every Facebook, WhatsApp, X and Pinterest share shows the logo instead of the actress or actor. This is a big loss of click-through for a photo site.
+  **Fix:** AIOSEO → Social Networks → Facebook → "Default Post Image Source" = **Featured Image** (or "First image in content"), and do the same for Twitter. Tag and category pages (186) have no `og:image` at all.
+- [ ] **214 pages are missing meta descriptions:** all 171 tags, 42 posts and 1 category. Set an AIOSEO template for tags, e.g. `#taxonomy_title biography, latest photos, movies and news on ActorFacts.`
+- [ ] **8 biographies have auto-generated junk descriptions** built from their headings and Instagram embed text, e.g. Kriti Sanon: "Kriti Sanon Wiki Kriti Sanon Physical Stats Personal Life … View this post on Instagram A post shared by Kriti Sanon 🦋". Affected:
+  - `kriti-sanon-…`
+  - `deepthi-sunaina-…`
+  - `jacqueline-fernandez-…`
+  - `sai-pallavi-…`
+  - `katrina-kaif-…`
+  - `kajal-aggarwal-…`
+  - `pooja-kannan-…`
+  - plus 1 more
+
+  Write a manual 140–155-character description for each.
+- [ ] **168 meta descriptions are over 160 characters**, including 27 of 28 biographies. Rashmika Mandanna's is 209 and Prabhas's 199. Google truncates them.
+- [ ] **659 titles are over 60 characters.** Gallery titles have a median of 67 and 311 are over 70 (max 98), e.g. "Deepika Pilli Looks Gorgeous in Pink Lehenga Latest Photos - ActorFacts" (71).
+  **Fix:** shorter patterns such as `{Name} in Pink Lehenga: Latest Photos | ActorFacts`. Use the brand suffix on every post: some biographies (e.g. Kriti Sanon) drop it while others keep it.
+- [ ] **The main image is lazy-loaded, which slows LCP.** LiteSpeed lazy-loads the first content image (the hero) on every post. On a throttled mobile test, the Prabhas biography reached **LCP 4.2 s**, the threshold for "poor". The LCP element was the lazy-loaded `Prabhas-4-683x1024.jpg`.
+  **Fix:** in LiteSpeed Cache → Page Optimization → Media, enable **Viewport Images (VPI)**, or exclude the first content image from lazy load. Add `fetchpriority="high"` to the featured image.
+- [ ] **Images:**
+  - 7,875 of 12,588 content images (63%) lack `width`/`height`. Enable LiteSpeed "Add Missing Sizes".
+  - Only 2,100 (17%) are WebP or AVIF. Enable LiteSpeed Image Optimization → "Image WebP Replacement" and run bulk optimization.
+  - 5,274 alt texts are just the post title plus "(n)". Describe each photo instead, e.g. "Deepika Pilli in a pink lehenga at a studio photoshoot". Galleries live or die on image search, and descriptive alts are the main ranking signal there.
+- [ ] **Duplicate and competing content:**
+  - `/priya-shukla-sunset-beach-look-elegant-flow-dress-photos/` and `…-photos-2/` share the same title and description. Merge them and 301 one to the other.
+  - Priyanka Chopra has **two biographies**, `/priyanka-chopra-jonas-biography-bollywood-to-hollywood-success-story/` and `/priyanka-chopra-biography-age-height-…-actorfacts/`. Merge them into one and 301 the other.
+- [ ] **The homepage has 420 links that repeat the same 4–5 posts.** "Deepika Pilli Looks Gorgeous in Pink Lehenga" appears as an H3 in 8 sections, and the "Bollywood" and "Hollywood" blocks show the same Telugu photoshoots. Give each section its own category query, and cut the page to about 150 links.
+- [ ] **The Uncategorized category is indexed and in the sitemap** (`/uncategorized/`). Assign its posts to real categories, then `noindex` or delete it.
+- [ ] **The About page meta description is "Please contact us"** (17 characters), even though the page has a solid editorial section. Write a real description, e.g. "ActorFacts covers verified biographies, filmographies and photos of South Indian and Bollywood stars. Meet our team and editorial standards."
+- [ ] **Personal Gmail in the Organization schema.** The schema includes `"email": "techroots91@gmail.com"`. Use a domain address such as `editor@actorfacts.com`, set in AIOSEO → General → Organization.
 
 ## Opportunities (nice to have)
 
-- [ ] **Add `Person` schema to biographies.** The pages currently carry `Article` schema (articleSection "Actress, Biography, …"). Add a `Person` entity with `birthDate`, `birthPlace`, `jobTitle`, `image`, and `sameAs` (Wikipedia, IMDb, Wikidata, official Instagram), and wrap it in `ProfilePage`. The `/searchfit-seo:schema-markup` command can generate this.
-- [ ] **Add FAQ sections** on biographies ("How old is…", "What is … 's first movie?"). They're useful for AI answers and People Also Ask, even without FAQ rich results.
-- [ ] **Link galleries and biographies to each other.** Every gallery post should link to that person's biography, and each biography should link to their latest galleries.
-- [ ] **Quick Facts table with sources** at the top of each biography, plus a "Last verified" date.
-- [ ] **Turn Hollywood, Bollywood, Kollywood etc. into proper hubs**, with an intro, a table of featured biographies and links to the newest galleries, rather than bare post lists.
-- [ ] **Strengthen the About page**: name the editor or authors, explain how facts are verified, and add a corrections policy and contact details. Create author pages.
+- [ ] **Tag pages carry two competing JSON-LD blocks**: the AIOSEO graph says `CollectionPage`, and a second block says `ProfilePage`. Keep one, preferably `ProfilePage` with a `Person` mainEntity, and disable the other's schema output for tags.
+- [ ] **Biographies are the strongest content (median 982 words), but there are only 28.** Scale them, starting with emerging Telugu and Kannada names where the competitors are weak templated sites.
+- [ ] **Turn the movie pages into a real Cast & Crew section.** `/baahubali-the-beginning/` already has Cast and Crew sections but no meta description. Add `Movie` schema, a synopsis and links to each cast member's page.
+- [ ] **Small tap targets on mobile**: 284 links or buttons on the homepage and 79–97 on posts are under 24px tall (Google's minimum is 24px and the target is 48px). Increase padding on footer, menu and tag links.
+- [ ] **Empty-anchor internal links**: 8–30 per page, probably image-only links. Make sure each linked image has alt text, or add `aria-label`.
+- [ ] **Curate `llms.txt`.** It exists (AIOSEO-generated) but lists the newest gallery posts. Put the biography hub, category hubs and top biographies first.
+- [ ] **Homepage H1 is just "ActorFacts".** Use "ActorFacts: Actor Biographies, Celebrity Photos & Cinema News", which is more descriptive.
+- [ ] **Move biographies to short slugs** (`/rashmika-mandanna-biography/`) with 301s. This is optional and only worth doing when a page is being reworked anyway, since the current titles are already good.
 
 ## Passing
 
-- The site is indexed: the homepage, the main sections and many biographies are in search results.
-- Breadcrumbs are in place (Home › Biography › Actress), as seen in the structured data.
-- Article and Organization JSON-LD are present (an SEO plugin is outputting schema).
-- Biographies include filmography tables (year, film, language), which suit rich results and AI extraction.
-- The homepage title and description are clear and descriptive.
-- The photo categories are grouped sensibly by film industry (Kollywood, Sandalwood, etc.).
+- `robots.txt` is clean (only `/wp-admin/` blocked), lists both sitemaps, and blocks no search or AI crawlers. There's no Cloudflare in front of the site, which runs on Hostinger's CDN.
+- The XML sitemap index exists, and **985 of 986 URLs return 200**. The one exception was a timeout that succeeded on retry. No broken URLs, no redirect chains.
+- `llms.txt` exists.
+- A proper **404** with `noindex` for missing pages. Search results pages are `noindex`. `/tag/x/` 301s to `/x/`.
+- **Canonicals are self-referencing on all 986 pages.** AMP `?amp=1` variants point back to the clean URL.
+- **Exactly one H1 on every page**, with no empty headings and a logical H2/H3 order on biographies (Wiki, Physical Stats, Family, Filmography, Awards).
+- **Strong structured data on biographies**: `BlogPosting`, a `Person` entity with `birthDate`, `birthPlace`, `jobTitle`, `nationality` and `sameAs`, a named author (Ravi Varma), and `BreadcrumbList`.
+- **Biography titles have been fixed** to "{Name} Biography: Age, Family, Career & Films" (50–66 characters), and ages now read correctly (Rashmika Mandanna: 30).
+- **Good performance basics**: LiteSpeed page cache (HIT), 10KB used-CSS, only 1 external script (gtag) and no render-blocking JS. HTML is about 45–60KB compressed, with a 0.4–0.7 s warm TTFB. CLS is near 0 (0.001–0.067). The homepage LCP is 1.8 s on throttled mobile.
+- **Mobile**: correct viewport, 16px body text, no horizontal scroll.
+- **Twitter Card** (`summary_large_image`) and Open Graph tags are present on posts and pages.
+- **Clear site architecture**: Photos → Tollywood, Kollywood, Mollywood, Bollywood, Sandalwood, Hollywood and Influencers; Biography → Actor and Actress; Reviews; Cast & Crew.
 
-## Not verified
+## Fix order
 
-These need direct access (allow `actorfacts.com` and `www.actorfacts.com` in the session's network settings) or Semrush API units:
+1. **Today, in AIOSEO settings (about 30 minutes):**
+   - change pagination to `noindex, follow`;
+   - set the social image to Featured Image;
+   - add a meta description template for tags;
+   - fix the About page description and the Organization email.
+2. **This week:**
+   - decide hub or `noindex` for tag pages;
+   - merge the duplicate Priya Shukla and Priyanka Chopra pages;
+   - rewrite the 8 junk biography descriptions;
+   - turn on LiteSpeed VPI, Add Missing Sizes and WebP.
+3. **This month:**
+   - restart publishing;
+   - add context text to galleries;
+   - give each homepage section its own query;
+   - write descriptive image alts for new galleries.
+4. **Ongoing:**
+   - expand biographies;
+   - build the movie/Cast & Crew section with `Movie` schema.
 
-- [ ] `robots.txt` contents and any AI or search bot blocks
-- [ ] Whether `sitemap.xml` exists, what it covers, and whether AMP and tag URLs are excluded
-- [ ] `www` → apex redirect, HTTPS redirect, status codes
-- [ ] Canonical tags on normal, AMP and paginated URLs
-- [ ] Meta description length and uniqueness on each page
-- [ ] Open Graph and Twitter Card tags
-- [ ] H1 count and heading hierarchy
-- [ ] Image `alt` text, formats (WebP/AVIF), width/height, lazy loading
-- [ ] Core Web Vitals, render-blocking CSS/JS, ad scripts
-- [ ] Broken internal links, orphan pages, links per page
-- [ ] Mobile layout, tap targets, font size, contrast
+## Method
 
-## Priority order
+All 986 sitemap URLs were fetched live and parsed for titles, descriptions, canonicals, robots meta, Open Graph, headings, content word count, images and JSON-LD. Spot checks covered redirects, AMP, pagination, 404s and search results. Lab vitals came from headless Chromium emulating a Pixel 5 (4× CPU throttle, 1.6 Mbps, 150 ms RTT) on the homepage, one biography, one gallery and one tag page. These are lab numbers from a non-Indian location. Real-user Core Web Vitals are in Google Search Console → Core Web Vitals.
 
-1. Fix the AMP duplicates and the duplicate Uncategorized URLs (an hour in plugin settings plus redirects).
-2. Decide one URL per person; `noindex` or improve the thin tag archives.
-3. Switch fixed ages to calculated ages.
-4. Shorten title templates in the SEO plugin. The site-wide change takes minutes.
-5. Add Person schema and link galleries and biographies to each other.
-6. Restart regular publishing, with a focus on emerging South Indian actors, where competition is weakest.
+**Not checked:**
+- the `www.actorfacts.com` → `actorfacts.com` and `http` → `https` redirects (only the apex domain was allowed in the audit environment);
+- backlinks;
+- Search Console coverage data.
